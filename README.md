@@ -43,31 +43,3 @@ Simulation assets are cached to `~/.mecha10/simulation/`.
 | Linux | x86_64 | Planned |
 | Linux | aarch64 | Planned |
 | Windows | x86_64 | Planned |
-
-## Repository Structure
-
-```
-user-tools/
-├── scripts/
-│   └── install.sh      # CLI installer script
-└── README.md
-```
-
-GitHub Releases contain the actual binaries and assets.
-
-## Why This Repo?
-
-This repository serves as the public distribution point for Mecha10 while the main source repository remains private during development. This pattern allows:
-
-- Users to install without authentication
-- Clean separation of source code and distribution
-- Public install URLs that don't change when the main repo goes public
-
-## Links
-
-- [Mecha10 Documentation](https://mecha10.dev)
-- [Report Issues](https://github.com/mecha-industries/user-tools/issues)
-
-## License
-
-MIT
