@@ -157,17 +157,20 @@ create_default_config() {
     cat > "$CONFIG_FILE" << EOF
 {
   "robot_project": {
-    "name": "my-robot"
+    "name": "my-robot",
+    "install_dir": "$ROBOTS_DIR"
   },
   "platform_url": "https://api.mecha.industries",
-  "robot_id": "robot-001",
+  "robot_id": "my-robot",
+  "device_id": "$(hostname)",
   "auto_update": true,
   "update_check_interval_seconds": 300
 }
 EOF
 
     success "Created config: $CONFIG_FILE"
-    warn "Edit this file to configure your robot before starting the service."
+    warn "IMPORTANT: Edit 'robot_project.name' to match your project name before starting."
+    echo "  The name must match the binary uploaded to the registry."
 }
 
 # Main installation
