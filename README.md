@@ -1,6 +1,13 @@
 # Mecha10 User Tools
 
-Public distribution repository for Mecha10 CLI, Launcher, and simulation assets.
+Public distribution repository for Mecha10 CLI, Launcher, Docker images, and simulation assets.
+
+## Table of Contents
+
+- [CLI Install](#cli-install)
+- [Launcher Install](#launcher-install-linux)
+- [Docker Images](#docker-images)
+- [Supported Platforms](#supported-platforms)
 
 ## CLI Install
 
@@ -14,7 +21,7 @@ curl -fsSL https://raw.githubusercontent.com/mecha-industries/user-tools/main/sc
 
 ```bash
 # Install specific version
-MECHA10_VERSION=v0.1.42 curl -fsSL https://raw.githubusercontent.com/mecha-industries/user-tools/main/scripts/install.sh | sh
+MECHA10_VERSION=v0.1.44 curl -fsSL https://raw.githubusercontent.com/mecha-industries/user-tools/main/scripts/install.sh | sh
 
 # Install to custom directory
 MECHA10_INSTALL_DIR=/usr/local/bin curl -fsSL https://raw.githubusercontent.com/mecha-industries/user-tools/main/scripts/install.sh | sh
@@ -32,7 +39,7 @@ curl -fsSL https://raw.githubusercontent.com/mecha-industries/user-tools/main/sc
 
 ```bash
 # Install specific version
-MECHA10_VERSION=v0.1.42 curl -fsSL https://raw.githubusercontent.com/mecha-industries/user-tools/main/scripts/install-launcher.sh | sh
+MECHA10_VERSION=v0.1.44 curl -fsSL https://raw.githubusercontent.com/mecha-industries/user-tools/main/scripts/install-launcher.sh | sh
 
 # Skip systemd service setup
 MECHA10_NO_SERVICE=1 curl -fsSL https://raw.githubusercontent.com/mecha-industries/user-tools/main/scripts/install-launcher.sh | sh
@@ -90,6 +97,111 @@ After installation, configure the launcher:
 
 3. The launcher on your robot will automatically download and run the new version.
 
+## Docker Images
+
+All Docker images are published to GitHub Container Registry under `ghcr.io/mecha-industries/`.
+
+### User-Facing Images (Public)
+
+These images are used by end users and are publicly accessible.
+
+#### mecha10-remote
+
+Runs AI/ML nodes (object-detector, image-classifier, llm-command) that require platform-specific dependencies like ONNX Runtime.
+
+```bash
+# Pull the image
+docker pull ghcr.io/mecha-industries/mecha10-remote:0.1.44
+
+# Or use via CLI (automatically pulls)
+mecha10 remote up
+```
+
+| Image | Description |
+|-------|-------------|
+| `ghcr.io/mecha-industries/mecha10-remote:latest` | Latest stable release |
+| `ghcr.io/mecha-industries/mecha10-remote:0.1.44` | Specific version |
+
+#### simulation
+
+Runs Godot-based simulation for robot testing and development.
+
+```bash
+# Pull the image
+docker pull ghcr.io/mecha-industries/simulation:latest
+
+# Or use via CLI (automatically pulls)
+mecha10 sim run
+```
+
+| Image | Description |
+|-------|-------------|
+| `ghcr.io/mecha-industries/simulation:latest` | Latest with Godot 4.3 |
+| `ghcr.io/mecha-industries/simulation:0.1.44` | Specific version |
+| `ghcr.io/mecha-industries/simulation:godot-4.3` | Godot version tag |
+
+### Control Plane Images (Private)
+
+These images are used for self-hosted control plane deployments.
+
+#### user-tools services
+
+| Image | Description | Port |
+|-------|-------------|------|
+| `ghcr.io/mecha-industries/user-tools/dashboard` | Web dashboard UI | 3000 |
+| `ghcr.io/mecha-industries/user-tools/auth` | Authentication service | 3000 |
+| `ghcr.io/mecha-industries/user-tools/websocket-relay` | WebSocket relay for robot communication | 3004 |
+
+#### Deployment
+
+```bash
+# Pull control plane images
+docker pull ghcr.io/mecha-industries/user-tools/dashboard:0.1.44
+docker pull ghcr.io/mecha-industries/user-tools/auth:0.1.44
+docker pull ghcr.io/mecha-industries/user-tools/websocket-relay:0.1.44
+
+# Or use docker-compose from mecha10 monorepo
+cd mecha10
+docker compose up -d dashboard auth websocket-relay
+```
+
+### Building Images (Maintainers)
+
+For maintainers who need to build and publish images:
+
+```bash
+# Authenticate to GHCR
+gh auth token | docker login ghcr.io -u USERNAME --password-stdin
+
+# Build and push mecha10-remote (from mecha10 repo)
+./scripts/build-remote-image.sh --push
+
+# Build and push simulation (from mecha10 repo)
+./scripts/publish-simulation-image.sh 0.1.44
+
+# Build and push user-tools images (from this repo)
+./scripts/publish-docker-images.sh --mecha10-path ~/src/mecha10
+```
+
+### Building Launcher Binary
+
+Build the launcher binary for testing or development:
+
+```bash
+# Build for x86_64 (default)
+./scripts/build-launcher.sh --mecha10-path ~/src/mecha10
+
+# Build for aarch64 (Raspberry Pi 5)
+./scripts/build-launcher.sh --arch aarch64 --mecha10-path ~/src/mecha10
+```
+
+The binary is output to `mecha10/dist/mecha10-launcher` and can be used with the e2e test:
+
+```bash
+cd ~/src/mecha10
+./scripts/test-launcher-e2e.sh --arm64
+```
+
 ## What Gets Installed
 
 ### CLI Assets
@@ -130,3 +242,11 @@ Simulation assets are cached to `~/.mecha10/simulation/`.
 |----|--------------|--------|
 | Linux | x86_64 | Supported |
 | Linux | aarch64 (Pi 5) | Supported |
+
+### Docker Images
+
+| Image | linux/amd64 | linux/arm64 |
+|-------|-------------|-------------|
+| mecha10-remote | ✅ | ❌ |
+| simulation | ✅ | ❌ |
+| user-tools/* | ✅ | ❌ |
