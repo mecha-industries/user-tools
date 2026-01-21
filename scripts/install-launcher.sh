@@ -160,11 +160,12 @@ create_default_config() {
     "name": "my-robot",
     "install_dir": "$ROBOTS_DIR"
   },
-  "platform_url": "https://api.mecha.industries",
+  "platform_url": "https://mecha.industries",
   "robot_id": "my-robot",
   "device_id": "$(hostname)",
   "auto_update": true,
-  "update_check_interval_seconds": 300
+  "update_check_interval_seconds": 300,
+  "binary_registry_url": "https://mecha.industries/api/builds"
 }
 EOF
 
@@ -261,7 +262,7 @@ main() {
     echo "Next steps:"
     echo ""
     echo "  1. Login (if not already):"
-    echo "     ${BLUE}mecha10 auth login${NC}"
+    echo "     ${BLUE}mecha10-launcher auth login${NC}"
     echo ""
     echo "  2. Edit configuration:"
     echo "     ${BLUE}$DATA_DIR/config.json${NC}"
