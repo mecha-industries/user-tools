@@ -157,11 +157,11 @@ create_default_config() {
     cat > "$CONFIG_FILE" << EOF
 {
   "robot_project": {
-    "name": "my-robot",
+    "name": "robot_dev",
     "install_dir": "$ROBOTS_DIR"
   },
   "platform_url": "https://mecha.industries",
-  "robot_id": "my-robot",
+  "robot_id": "robot_dev",
   "device_id": "$(hostname)",
   "auto_update": true,
   "update_check_interval_seconds": 300,
@@ -267,7 +267,10 @@ main() {
     echo "  2. Edit configuration:"
     echo "     ${BLUE}$DATA_DIR/config.json${NC}"
     echo ""
-    echo "  3. Start the service:"
+    echo "  3. Sync robot config:"
+    echo "     ${BLUE}mecha10-launcher config pull${NC}"
+    echo ""
+    echo "  4. Start the service:"
     echo "     ${BLUE}systemctl --user start mecha10-launcher${NC}"
     echo "     ${BLUE}systemctl --user enable mecha10-launcher${NC}  # Start on boot"
     echo ""
