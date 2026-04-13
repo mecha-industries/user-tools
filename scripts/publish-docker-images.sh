@@ -1,14 +1,14 @@
 #!/bin/bash
-# Build and publish user-tools Docker images to GHCR
+# Build and publish user-tools Docker images to Zot registry
 #
 # Publishes:
-#   - ghcr.io/mecha-industries/user-tools/dashboard
-#   - ghcr.io/mecha-industries/user-tools/auth
-#   - ghcr.io/mecha-industries/user-tools/websocket-relay
+#   - 192.168.1.46:8080/mecha10/dashboard
+#   - 192.168.1.46:8080/mecha10/auth
+#   - 192.168.1.46:8080/mecha10/websocket-relay
 #
 # Prerequisites:
 #   - Docker installed and running
-#   - Authenticated to GHCR: gh auth token | docker login ghcr.io -u USERNAME --password-stdin
+#   - Authenticated to Zot: docker login 192.168.1.46:8080 -u admin
 #   - MECHA10_PATH environment variable set to mecha10 monorepo path
 #
 # Usage:
@@ -21,7 +21,7 @@ set -e
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
 REPO_ROOT="$(dirname "$SCRIPT_DIR")"
-REGISTRY="ghcr.io/mecha-industries/user-tools"
+REGISTRY="192.168.1.46:8080/mecha10"
 
 # Colors
 RED='\033[0;31m'
