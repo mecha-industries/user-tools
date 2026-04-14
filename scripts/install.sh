@@ -4,9 +4,11 @@
 
 set -e
 
-REPO="mecha-industries/user-tools"
 BINARY_NAME="mecha10"
 INSTALL_DIR="${MECHA10_INSTALL_DIR:-$HOME/.local/bin}"
+MINIO_ENDPOINT="${MECHA10_MINIO_ENDPOINT:-http://192.168.1.32:9000}"
+MINIO_BUCKET="${MECHA10_MINIO_BUCKET:-mecha10}"
+MINIO_BASE="${MINIO_ENDPOINT}/${MINIO_BUCKET}"
 
 # Colors (disable if not a terminal)
 if [ -t 1 ]; then
@@ -73,12 +75,12 @@ detect_arch() {
     esac
 }
 
-# Get latest release version from GitHub
+# Get latest version from Minio
 get_latest_version() {
     if command -v curl >/dev/null 2>&1; then
-        curl -fsSL "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/'
+        curl -fsSL "${MINIO_BASE}/cli/latest.txt"
     elif command -v wget >/dev/null 2>&1; then
-        wget -qO- "https://api.github.com/repos/${REPO}/releases/latest" | grep '"tag_name"' | sed -E 's/.*"([^"]+)".*/\1/'
+        wget -qO- "${MINIO_BASE}/cli/latest.txt"
     else
         error "Neither curl nor wget found. Please install one of them."
     fi
@@ -115,9 +117,9 @@ main() {
     info "Installing mecha10 ${VERSION}..."
 
     # Construct download URL
-    # Binary naming: mecha10-{version}-{os}-{arch}.tar.gz
-    ARCHIVE_NAME="${BINARY_NAME}-${VERSION}-${OS}-${ARCH}.tar.gz"
-    DOWNLOAD_URL="https://github.com/${REPO}/releases/download/${VERSION}/${ARCHIVE_NAME}"
+    # Binary naming: mecha10-v{version}-{os}-{arch}.tar.gz
+    ARCHIVE_NAME="${BINARY_NAME}-v${VERSION}-${OS}-${ARCH}.tar.gz"
+    DOWNLOAD_URL="${MINIO_BASE}/cli/${ARCHIVE_NAME}"
 
     # Create temp directory
     TMP_DIR=$(mktemp -d)
