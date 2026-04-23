@@ -14,10 +14,13 @@ curl -fsSL https://raw.githubusercontent.com/mecha-industries/user-tools/main/sc
 
 ```bash
 # Install specific version
-MECHA10_VERSION=0.1.44 curl -fsSL ... | sh
+MECHA10_VERSION=0.2.4 curl -fsSL ... | sh
 
 # Install to custom directory
 MECHA10_INSTALL_DIR=/usr/local/bin curl -fsSL ... | sh
+
+# Use a different Minio endpoint
+MECHA10_MINIO_ENDPOINT=http://your-host:9000 curl -fsSL ... | sh
 ```
 
 ### Supported Platforms
@@ -41,7 +44,7 @@ curl -fsSL https://raw.githubusercontent.com/mecha-industries/user-tools/main/sc
 
 ```bash
 # Install specific version
-MECHA10_VERSION=0.1.44 curl -fsSL ... | sh
+MECHA10_VERSION=0.2.4 curl -fsSL ... | sh
 
 # Skip systemd service setup
 MECHA10_NO_SERVICE=1 curl -fsSL ... | sh
