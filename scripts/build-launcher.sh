@@ -15,8 +15,6 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-
 # Colors
 RED='\033[0;31m'
 GREEN='\033[0;32m'
