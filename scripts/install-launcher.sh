@@ -145,37 +145,6 @@ EOF
     fi
 }
 
-# Create default configuration
-create_default_config() {
-    CONFIG_FILE="$DATA_DIR/config.json"
-
-    if [ -f "$CONFIG_FILE" ]; then
-        info "Configuration already exists: $CONFIG_FILE"
-        return
-    fi
-
-    info "Creating default configuration..."
-
-    cat > "$CONFIG_FILE" << EOF
-{
-  "robot_project": {
-    "name": "robot_dev",
-    "install_dir": "$ROBOTS_DIR"
-  },
-  "platform_url": "https://mecha.industries",
-  "robot_id": "robot_dev",
-  "device_id": "$(hostname)",
-  "auto_update": true,
-  "update_check_interval_seconds": 300,
-  "binary_registry_url": "https://mecha.industries/api/builds"
-}
-EOF
-
-    success "Created config: $CONFIG_FILE"
-    warn "IMPORTANT: Edit 'robot_project.name' to match your project name before starting."
-    echo "  The name must match the binary uploaded to the registry."
-}
-
 # Main installation
 main() {
     echo ""
@@ -232,8 +201,10 @@ main() {
 
     success "Installed binary to ${INSTALL_DIR}/${BINARY_NAME}"
 
-    # Create default configuration
-    create_default_config
+    # Note: config.json is intentionally not created here. On first run,
+    # `mecha10-launcher start` detects the missing config and runs its
+    # interactive setup wizard (auth + robot project/ID prompts) to
+    # generate it.
 
     # Setup systemd user service unless disabled
     if [ "${MECHA10_NO_SERVICE:-0}" != "1" ]; then
@@ -263,21 +234,19 @@ main() {
     echo ""
     echo "Next steps:"
     echo ""
-    echo "  1. Login (if not already):"
-    echo "     ${BLUE}mecha10-launcher auth login${NC}"
+    echo "  1. Run the launcher:"
+    echo "     ${BLUE}mecha10-launcher start${NC}"
     echo ""
-    echo "  2. Edit configuration:"
-    echo "     ${BLUE}$DATA_DIR/config.json${NC}"
+    echo "     On first run, this walks you through interactive setup:"
+    echo "     login (auth), then prompts for your robot project name and"
+    echo "     robot ID. No manual config editing needed."
     echo ""
-    echo "  3. Sync robot config:"
+    echo "  2. Sync robot config (after setup):"
     echo "     ${BLUE}mecha10-launcher config pull${NC}"
     echo ""
-    echo "  4. Start the service:"
+    echo "  3. Or run as a service:"
     echo "     ${BLUE}systemctl --user start mecha10-launcher${NC}"
     echo "     ${BLUE}systemctl --user enable mecha10-launcher${NC}  # Start on boot"
-    echo ""
-    echo "  Or run manually:"
-    echo "     ${BLUE}mecha10-launcher start${NC}"
     echo ""
 }
 
