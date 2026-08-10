@@ -13,9 +13,7 @@ set -e
 
 BINARY_NAME="mecha10-launcher"
 INSTALL_DIR="${MECHA10_INSTALL_DIR:-$HOME/.local/bin}"
-MINIO_ENDPOINT="${MECHA10_MINIO_ENDPOINT:-http://192.168.1.32:9000}"
-MINIO_BUCKET="${MECHA10_MINIO_BUCKET:-mecha10}"
-MINIO_BASE="${MINIO_ENDPOINT}/${MINIO_BUCKET}"
+API_BASE="${MECHA10_API_URL:-https://mecha.industries/api}"
 DATA_DIR="$HOME/.mecha10/launcher"
 ROBOTS_DIR="$HOME/mecha10/robots"
 
@@ -78,17 +76,6 @@ detect_arch() {
             error "Unsupported architecture: $(uname -m)"
             ;;
     esac
-}
-
-# Get latest version from Minio
-get_latest_version() {
-    if command -v curl >/dev/null 2>&1; then
-        curl -fsSL "${MINIO_BASE}/launchers/latest.txt"
-    elif command -v wget >/dev/null 2>&1; then
-        wget -qO- "${MINIO_BASE}/launchers/latest.txt"
-    else
-        error "Neither curl nor wget found. Please install one of them."
-    fi
 }
 
 # Download file
@@ -159,17 +146,11 @@ main() {
 
     info "OS: $OS, Architecture: $ARCH"
 
-    # Get version (use provided or fetch latest)
-    VERSION="${MECHA10_VERSION:-$(get_latest_version)}"
-    if [ -z "$VERSION" ]; then
-        error "Could not determine latest version. Please set MECHA10_VERSION environment variable."
-    fi
+    info "Installing mecha10-launcher (version: ${MECHA10_VERSION:-latest})..."
 
-    info "Installing mecha10-launcher ${VERSION}..."
-
-    # Construct download URL
-    ARCHIVE_NAME="${BINARY_NAME}-v${VERSION}-${OS}-${ARCH}.tar.gz"
-    DOWNLOAD_URL="${MINIO_BASE}/launchers/${ARCHIVE_NAME}"
+    # Construct download URL against the mecha10 downloads API
+    ARCHIVE_NAME="${BINARY_NAME}.tar.gz"
+    DOWNLOAD_URL="${API_BASE}/downloads/launcher?arch=${ARCH}${MECHA10_VERSION:+&version=${MECHA10_VERSION}}"
 
     # Create temp directory
     TMP_DIR=$(mktemp -d)
@@ -230,7 +211,7 @@ main() {
     echo "  Installation Complete"
     echo "==========================================${NC}"
     echo ""
-    success "mecha10-launcher ${VERSION} installed successfully!"
+    success "mecha10-launcher installed successfully!"
     echo ""
     echo "Next steps:"
     echo ""

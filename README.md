@@ -19,8 +19,8 @@ MECHA10_VERSION=0.2.4 curl -fsSL ... | sh
 # Install to custom directory
 MECHA10_INSTALL_DIR=/usr/local/bin curl -fsSL ... | sh
 
-# Use a different Minio endpoint
-MECHA10_MINIO_ENDPOINT=http://your-host:9000 curl -fsSL ... | sh
+# Use a different API endpoint
+MECHA10_API_URL=https://mecha.industries/api curl -fsSL ... | sh
 ```
 
 ### Supported Platforms
@@ -48,6 +48,9 @@ MECHA10_VERSION=0.2.4 curl -fsSL ... | sh
 
 # Skip systemd service setup
 MECHA10_NO_SERVICE=1 curl -fsSL ... | sh
+
+# Use a different API endpoint
+MECHA10_API_URL=https://mecha.industries/api curl -fsSL ... | sh
 ```
 
 ### Launcher Setup
@@ -90,16 +93,18 @@ After installation:
 
 ### CLI
 
-Downloads from Minio (`${MECHA10_MINIO_ENDPOINT}/${MECHA10_MINIO_BUCKET}/cli/...`):
-- `mecha10-v{VERSION}-{os}-{arch}.tar.gz`
+Downloads via the mecha10 downloads API (`${MECHA10_API_URL}/downloads/cli?os=...&arch=...`),
+which proxies internal storage — you don't need direct access to that storage:
+- the `mecha10` CLI binary archive for your OS/architecture
 
-When you run `mecha10 sim` commands, additional assets are downloaded:
+When you run `mecha10 sim` commands, additional assets are downloaded the same way:
 - `mecha10-simulation.tar.gz` - Godot project, robot models, environments
 
 ### Launcher
 
-Downloads from Minio (`${MECHA10_MINIO_ENDPOINT}/${MECHA10_MINIO_BUCKET}/launchers/...`):
-- `mecha10-launcher-v{VERSION}-linux-{arch}.tar.gz`
+Downloads via the mecha10 downloads API (`${MECHA10_API_URL}/downloads/launcher?arch=...`),
+which proxies internal storage — you don't need direct access to that storage:
+- the `mecha10-launcher` binary archive for your architecture
 
 ## Docker Images
 
