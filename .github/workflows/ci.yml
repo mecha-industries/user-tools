@@ -18,7 +18,7 @@ jobs:
   # own shebang is the cheapest real signal that they at least parse.
   syntax-check:
     name: Syntax check
-    runs-on: self-hosted
+    runs-on: [self-hosted, catfood]
     steps:
       - uses: actions/checkout@v4
 
@@ -51,7 +51,7 @@ jobs:
   # doesn't depend on anything outside this repo's own workflow file.
   shellcheck:
     name: shellcheck
-    runs-on: self-hosted
+    runs-on: [self-hosted, catfood]
     steps:
       - uses: actions/checkout@v4
 
@@ -80,7 +80,7 @@ jobs:
   # that org-to-org workflow_call can't reach — see mecha10 PR #103/#104).
   actionlint:
     name: actionlint
-    runs-on: self-hosted
+    runs-on: [self-hosted, catfood]
     steps:
       - uses: actions/checkout@v4
 
