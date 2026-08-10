@@ -1,0 +1,102 @@
+name: CI
+
+on:
+  pull_request:
+    branches:
+      - main
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  # No test suite exists for these scripts (they're curled/piped straight
+  # into sh by end users), so a per-file syntax check against each script's
+  # own shebang is the cheapest real signal that they at least parse.
+  syntax-check:
+    name: Syntax check
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Check shell syntax (per-file shebang)
+        run: |
+          set -e
+          status=0
+          for f in scripts/*.sh; do
+            shebang="$(head -1 "$f")"
+            case "$shebang" in
+              '#!/bin/sh')
+                echo "== sh -n $f =="
+                sh -n "$f" || status=1
+                ;;
+              '#!/bin/bash')
+                echo "== bash -n $f =="
+                bash -n "$f" || status=1
+                ;;
+              *)
+                echo "== $f: unrecognized shebang '$shebang' =="
+                status=1
+                ;;
+            esac
+          done
+          exit "$status"
+
+  # Hard gate: these scripts run unreviewed on end users' machines via
+  # curl|sh, so a real shellcheck finding is a real risk. Installed from a
+  # pinned static release tarball (not a Marketplace action) so this job
+  # doesn't depend on anything outside this repo's own workflow file.
+  shellcheck:
+    name: shellcheck
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install shellcheck
+        env:
+          SHELLCHECK_VERSION: v0.11.0
+        run: |
+          set -e
+          curl -sSL "https://github.com/koalaman/shellcheck/releases/download/${SHELLCHECK_VERSION}/shellcheck-${SHELLCHECK_VERSION}.linux.x86_64.tar.xz" -o /tmp/shellcheck.tar.xz
+          mkdir -p "$RUNNER_TEMP/bin"
+          tar -xJf /tmp/shellcheck.tar.xz -C "$RUNNER_TEMP/bin" --strip-components=1 "shellcheck-${SHELLCHECK_VERSION}/shellcheck"
+          chmod +x "$RUNNER_TEMP/bin/shellcheck"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - name: Run shellcheck
+        run: |
+          set -e
+          shellcheck --version
+          # Each script carries its own #!/bin/sh or #!/bin/bash shebang, and
+          # the tool infers dialect per-file from that -- no --shell override.
+          shellcheck scripts/*.sh
+
+  # Hard gate, matching every other repo's convention. Installed the same
+  # way as shellcheck above: pinned static release, no remote `uses:` to
+  # labone-actions (that reusable workflow is a private user-owned repo
+  # that org-to-org workflow_call can't reach — see mecha10 PR #103/#104).
+  actionlint:
+    name: actionlint
+    runs-on: self-hosted
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install actionlint
+        env:
+          ACTIONLINT_VERSION: 1.7.12
+        run: |
+          set -e
+          curl -sSL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" -o /tmp/actionlint.tar.gz
+          mkdir -p "$RUNNER_TEMP/bin"
+          tar -xzf /tmp/actionlint.tar.gz -C "$RUNNER_TEMP/bin" actionlint
+          chmod +x "$RUNNER_TEMP/bin/actionlint"
+          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+
+      - name: Run actionlint
+        run: |
+          set -e
+          actionlint -version
+          actionlint -color

@@ -19,8 +19,6 @@
 
 set -e
 
-SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
-REPO_ROOT="$(dirname "$SCRIPT_DIR")"
 REGISTRY="192.168.1.46:8080/mecha10"
 
 # Colors

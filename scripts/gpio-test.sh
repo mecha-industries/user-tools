@@ -51,7 +51,7 @@ cleanup() {
 set_pins() {
     local default=$1
     shift
-    local overrides="$@"
+    local overrides="$*"
 
     cleanup
 
@@ -74,7 +74,8 @@ set_pins() {
         cmd="$cmd $pin=${pin_vals[$pin]}"
     done
 
-    gpioset -c $CHIP $cmd &
+    # shellcheck disable=SC2086 # $cmd intentionally splits into separate pin=val args
+    gpioset -c "$CHIP" $cmd &
     sleep 0.3
 }
 
@@ -83,7 +84,7 @@ run_test() {
     local label=$1
     local baseline=$2
     shift 2
-    local test_pins="$@"
+    local test_pins="$*"
 
     echo "========================================"
     echo "TEST: $label"
@@ -91,7 +92,8 @@ run_test() {
     echo "========================================"
 
     echo ">>> ACTIVE <<<"
-    set_pins $baseline $test_pins
+    # shellcheck disable=SC2086 # $test_pins intentionally splits into separate pin=val overrides
+    set_pins "$baseline" $test_pins
     sleep 2
 
     echo ">>> RESET <<<"
