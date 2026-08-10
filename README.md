@@ -7,7 +7,7 @@ Public distribution repository for Mecha10 CLI and Launcher binaries.
 Install the Mecha10 CLI on your development machine:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mecha-industries/user-tools/main/scripts/install.sh | sh
+curl -fsSL https://mecha.industries/api/install.sh | sh
 ```
 
 ### Options
@@ -37,7 +37,7 @@ MECHA10_API_URL=https://mecha.industries/api curl -fsSL ... | sh
 Install the Mecha10 Launcher on your robot/edge device:
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/mecha-industries/user-tools/main/scripts/install-launcher.sh | sh
+curl -fsSL https://mecha.industries/api/install-launcher.sh | sh
 ```
 
 ### Options
