@@ -6,9 +6,7 @@ set -e
 
 BINARY_NAME="mecha10"
 INSTALL_DIR="${MECHA10_INSTALL_DIR:-$HOME/.local/bin}"
-MINIO_ENDPOINT="${MECHA10_MINIO_ENDPOINT:-http://192.168.1.32:9000}"
-MINIO_BUCKET="${MECHA10_MINIO_BUCKET:-mecha10}"
-MINIO_BASE="${MINIO_ENDPOINT}/${MINIO_BUCKET}"
+API_BASE="${MECHA10_API_URL:-https://mecha.industries/api}"
 
 # Colors (disable if not a terminal)
 if [ -t 1 ]; then
@@ -75,17 +73,6 @@ detect_arch() {
     esac
 }
 
-# Get latest version from Minio
-get_latest_version() {
-    if command -v curl >/dev/null 2>&1; then
-        curl -fsSL "${MINIO_BASE}/cli/latest.txt"
-    elif command -v wget >/dev/null 2>&1; then
-        wget -qO- "${MINIO_BASE}/cli/latest.txt"
-    else
-        error "Neither curl nor wget found. Please install one of them."
-    fi
-}
-
 # Download file
 download() {
     url="$1"
@@ -108,18 +95,11 @@ main() {
 
     info "OS: $OS, Architecture: $ARCH"
 
-    # Get version (use provided or fetch latest)
-    VERSION="${MECHA10_VERSION:-$(get_latest_version)}"
-    if [ -z "$VERSION" ]; then
-        error "Could not determine latest version. Please set MECHA10_VERSION environment variable."
-    fi
+    info "Installing mecha10 (version: ${MECHA10_VERSION:-latest})..."
 
-    info "Installing mecha10 ${VERSION}..."
-
-    # Construct download URL
-    # Binary naming: mecha10-v{version}-{os}-{arch}.tar.gz
-    ARCHIVE_NAME="${BINARY_NAME}-v${VERSION}-${OS}-${ARCH}.tar.gz"
-    DOWNLOAD_URL="${MINIO_BASE}/cli/${ARCHIVE_NAME}"
+    # Construct download URL against the mecha10 downloads API
+    ARCHIVE_NAME="${BINARY_NAME}.tar.gz"
+    DOWNLOAD_URL="${API_BASE}/downloads/cli?os=${OS}&arch=${ARCH}${MECHA10_VERSION:+&version=${MECHA10_VERSION}}"
 
     # Create temp directory
     TMP_DIR=$(mktemp -d)
@@ -142,7 +122,7 @@ main() {
 
     # Verify installation
     if [ -x "$INSTALL_DIR/${BINARY_NAME}" ]; then
-        success "Successfully installed mecha10 ${VERSION} to ${INSTALL_DIR}/${BINARY_NAME}"
+        success "Successfully installed mecha10 to ${INSTALL_DIR}/${BINARY_NAME}"
     else
         error "Installation failed"
     fi
