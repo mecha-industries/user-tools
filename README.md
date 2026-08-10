@@ -54,17 +54,14 @@ MECHA10_NO_SERVICE=1 curl -fsSL ... | sh
 
 After installation:
 
-1. **Login** on your development machine:
+1. **Login** directly on the robot:
    ```bash
    mecha10 auth login
    ```
+   This uses a device-code flow, so it works headlessly on the robot itself — no dev
+   machine or `scp` required. Follow the printed URL/code to authorize from any browser.
 
-2. **Copy credentials** to your robot:
-   ```bash
-   scp ~/.mecha10/credentials.json robot@your-robot:~/.mecha10/
-   ```
-
-3. **Configure** on the robot (`~/.mecha10/launcher/config.json`):
+2. **Configure** on the robot (`~/.mecha10/launcher/config.json`):
    ```json
    {
      "robot_project": {
@@ -77,7 +74,7 @@ After installation:
    }
    ```
 
-4. **Start** the launcher:
+3. **Start** the launcher:
    ```bash
    systemctl --user start mecha10-launcher
    ```
@@ -93,7 +90,7 @@ After installation:
 
 ### CLI
 
-Downloads from this repository's GitHub Releases:
+Downloads from Minio (`${MECHA10_MINIO_ENDPOINT}/${MECHA10_MINIO_BUCKET}/cli/...`):
 - `mecha10-v{VERSION}-{os}-{arch}.tar.gz`
 
 When you run `mecha10 sim` commands, additional assets are downloaded:
@@ -101,7 +98,7 @@ When you run `mecha10 sim` commands, additional assets are downloaded:
 
 ### Launcher
 
-Downloads from this repository's GitHub Releases:
+Downloads from Minio (`${MECHA10_MINIO_ENDPOINT}/${MECHA10_MINIO_BUCKET}/launchers/...`):
 - `mecha10-launcher-v{VERSION}-linux-{arch}.tar.gz`
 
 ## Docker Images
@@ -120,4 +117,4 @@ mecha10 remote up
 
 Build and publish scripts are in the [mecha10 monorepo](https://github.com/mecha-industries/mecha10).
 
-See `PUBLISHING.md` in that repository for release instructions.
+See [`scripts/README.md`](https://github.com/mecha-industries/mecha10/blob/main/scripts/README.md) in that repository for release instructions.
