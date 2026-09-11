@@ -20,7 +20,7 @@ jobs:
     name: Syntax check
     runs-on: [self-hosted, catfood]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Check shell syntax (per-file shebang)
         run: |
@@ -53,7 +53,7 @@ jobs:
     name: shellcheck
     runs-on: [self-hosted, catfood]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install shellcheck
         env:
@@ -82,7 +82,7 @@ jobs:
     name: actionlint
     runs-on: [self-hosted, catfood]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v7
 
       - name: Install actionlint
         env:
