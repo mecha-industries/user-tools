@@ -100,3 +100,17 @@ jobs:
           set -e
           actionlint -version
           actionlint -color
+
+  # Lets branch protection require this single check instead of listing
+  # every job above by name (brittle - a renamed/added/removed job silently
+  # stops being enforced, or permanently blocks merge if a listed name no
+  # longer matches anything real).
+  required-checks:
+    name: Required checks
+    needs: [syntax-check, shellcheck, actionlint]
+    runs-on: [self-hosted, catfood, catfood-minimal]
+    if: always()
+    steps:
+      - name: Fail if any required job failed or was cancelled
+        if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
+        run: exit 1
