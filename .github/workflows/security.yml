@@ -1,6 +1,17 @@
 name: Security Scan
 run-name: Dependency & secret scan
 
+# Inlined rather than referenced via `uses:` - this previously called
+# `mecha-industries/mecha10-actions/.github/workflows/security-scan.yml@main`,
+# a reusable workflow in a repo that does not exist (confirmed 404). That
+# broke this entire workflow at startup (a bad reusable-workflow reference
+# fails the whole run, not just this one job) - same failure mode as
+# mecha10-deploy's validate.yml actionlint job, fixed the same way there.
+#
+# No dependency manifests exist in this repo (it's shell scripts only), so
+# there is nothing for a Trivy vulnerability scan to check - only the
+# secret scan applies here.
+
 on:
   pull_request:
     types: [opened, synchronize]
@@ -18,7 +29,18 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
-  trivy:
-    name: Trivy vulnerability & secret scan
-    uses: mecha-industries/mecha10-actions/.github/workflows/security-scan.yml@main
-    secrets: inherit
+  trivy-secret:
+    name: Trivy secret scan
+    runs-on: [self-hosted, catfood]
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Run Trivy (secrets)
+        uses: aquasecurity/trivy-action@v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: secret
+          severity: HIGH,CRITICAL
+          exit-code: '1'
+          format: table
