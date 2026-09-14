@@ -1,6 +1,4 @@
 #!/bin/sh
-# Mecha10 CLI Installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/mecha-industries/user-tools/main/scripts/install.sh | sh
 
 set -e
 
@@ -8,7 +6,6 @@ BINARY_NAME="mecha10"
 INSTALL_DIR="${MECHA10_INSTALL_DIR:-$HOME/.local/bin}"
 API_BASE="${MECHA10_API_URL:-https://mecha.industries/api}"
 
-# Colors (disable if not a terminal)
 if [ -t 1 ]; then
     RED='\033[0;31m'
     GREEN='\033[0;32m'
@@ -40,7 +37,6 @@ error() {
     exit 1
 }
 
-# Detect OS
 detect_os() {
     case "$(uname -s)" in
         Darwin)
@@ -58,7 +54,6 @@ detect_os() {
     esac
 }
 
-# Detect architecture
 detect_arch() {
     case "$(uname -m)" in
         x86_64|amd64)
@@ -73,7 +68,6 @@ detect_arch() {
     esac
 }
 
-# Download file
 download() {
     url="$1"
     output="$2"
@@ -87,7 +81,6 @@ download() {
     fi
 }
 
-# Main installation
 main() {
     info "Detecting system..."
     OS=$(detect_os)
@@ -97,37 +90,30 @@ main() {
 
     info "Installing mecha10 (version: ${MECHA10_VERSION:-latest})..."
 
-    # Construct download URL against the mecha10 downloads API
     ARCHIVE_NAME="${BINARY_NAME}.tar.gz"
     DOWNLOAD_URL="${API_BASE}/downloads/cli?os=${OS}&arch=${ARCH}${MECHA10_VERSION:+&version=${MECHA10_VERSION}}"
 
-    # Create temp directory
     TMP_DIR=$(mktemp -d)
     trap 'rm -rf "$TMP_DIR"' EXIT
 
     info "Downloading from ${DOWNLOAD_URL}..."
     download "$DOWNLOAD_URL" "$TMP_DIR/$ARCHIVE_NAME" || error "Failed to download. Check if release exists for your platform."
 
-    # Extract
     info "Extracting..."
     tar -xzf "$TMP_DIR/$ARCHIVE_NAME" -C "$TMP_DIR"
 
-    # Create install directory if needed
     mkdir -p "$INSTALL_DIR"
 
-    # Install binary
     info "Installing to ${INSTALL_DIR}/${BINARY_NAME}..."
     mv "$TMP_DIR/${BINARY_NAME}" "$INSTALL_DIR/${BINARY_NAME}"
     chmod +x "$INSTALL_DIR/${BINARY_NAME}"
 
-    # Verify installation
     if [ -x "$INSTALL_DIR/${BINARY_NAME}" ]; then
         success "Successfully installed mecha10 to ${INSTALL_DIR}/${BINARY_NAME}"
     else
         error "Installation failed"
     fi
 
-    # Check if install dir is in PATH
     case ":$PATH:" in
         *":$INSTALL_DIR:"*)
             ;;

@@ -1,13 +1,4 @@
 #!/bin/sh
-# Mecha10 Launcher Installer
-# Usage: curl -fsSL https://raw.githubusercontent.com/mecha-industries/user-tools/main/scripts/install-launcher.sh | sh
-#
-# This script installs the mecha10-launcher binary and sets up a user service.
-#
-# Environment variables:
-#   MECHA10_VERSION       - Specific version to install (default: latest)
-#   MECHA10_INSTALL_DIR   - Binary install location (default: ~/.local/bin)
-#   MECHA10_NO_SERVICE    - Set to 1 to skip service setup
 
 set -e
 
@@ -17,7 +8,6 @@ API_BASE="${MECHA10_API_URL:-https://mecha.industries/api}"
 DATA_DIR="$HOME/.mecha10/launcher"
 ROBOTS_DIR="$HOME/mecha10/robots"
 
-# Colors (disable if not a terminal)
 if [ -t 1 ]; then
     RED='\033[0;31m'
     GREEN='\033[0;32m'
@@ -51,7 +41,6 @@ error() {
     exit 1
 }
 
-# Detect OS (Linux only)
 detect_os() {
     case "$(uname -s)" in
         Linux)
@@ -63,7 +52,6 @@ detect_os() {
     esac
 }
 
-# Detect architecture
 detect_arch() {
     case "$(uname -m)" in
         x86_64|amd64)
@@ -78,7 +66,6 @@ detect_arch() {
     esac
 }
 
-# Download file
 download() {
     url="$1"
     output="$2"
@@ -92,7 +79,6 @@ download() {
     fi
 }
 
-# Setup systemd user service (Linux)
 setup_systemd_service() {
     SERVICE_DIR="$HOME/.config/systemd/user"
     SERVICE_FILE="$SERVICE_DIR/mecha10-launcher.service"
@@ -120,19 +106,16 @@ StandardError=journal
 WantedBy=default.target
 EOF
 
-    # Reload systemd
     systemctl --user daemon-reload 2>/dev/null || true
 
     success "Created systemd service: $SERVICE_FILE"
 
-    # Enable lingering so service runs without active session
     if command -v loginctl >/dev/null 2>&1; then
         info "Enabling user lingering for headless operation..."
         loginctl enable-linger "$(whoami)" 2>/dev/null || warn "Could not enable linger. Service may not run without active session."
     fi
 }
 
-# Main installation
 main() {
     echo ""
     echo "${BOLD}=========================================="
@@ -148,51 +131,38 @@ main() {
 
     info "Installing mecha10-launcher (version: ${MECHA10_VERSION:-latest})..."
 
-    # Construct download URL against the mecha10 downloads API
     ARCHIVE_NAME="${BINARY_NAME}.tar.gz"
     DOWNLOAD_URL="${API_BASE}/downloads/launcher?arch=${ARCH}${MECHA10_VERSION:+&version=${MECHA10_VERSION}}"
 
-    # Create temp directory
     TMP_DIR=$(mktemp -d)
     trap 'rm -rf "$TMP_DIR"' EXIT
 
     info "Downloading from ${DOWNLOAD_URL}..."
     download "$DOWNLOAD_URL" "$TMP_DIR/$ARCHIVE_NAME" || error "Failed to download. Check if release exists for your platform."
 
-    # Extract
     info "Extracting..."
     tar -xzf "$TMP_DIR/$ARCHIVE_NAME" -C "$TMP_DIR"
 
-    # Create directories
     info "Creating directories..."
     mkdir -p "$INSTALL_DIR"
     mkdir -p "$DATA_DIR"
     mkdir -p "$DATA_DIR/logs"
     mkdir -p "$ROBOTS_DIR"
 
-    # Install binary
     info "Installing to ${INSTALL_DIR}/${BINARY_NAME}..."
     mv "$TMP_DIR/${BINARY_NAME}" "$INSTALL_DIR/${BINARY_NAME}"
     chmod +x "$INSTALL_DIR/${BINARY_NAME}"
 
-    # Verify installation
     if [ ! -x "$INSTALL_DIR/${BINARY_NAME}" ]; then
         error "Installation failed"
     fi
 
     success "Installed binary to ${INSTALL_DIR}/${BINARY_NAME}"
 
-    # Note: config.json is intentionally not created here. On first run,
-    # `mecha10-launcher start` detects the missing config and runs its
-    # interactive setup wizard (auth + robot project/ID prompts) to
-    # generate it.
-
-    # Setup systemd user service unless disabled
     if [ "${MECHA10_NO_SERVICE:-0}" != "1" ]; then
         setup_systemd_service
     fi
 
-    # Check if install dir is in PATH
     case ":$PATH:" in
         *":$INSTALL_DIR:"*)
             ;;
