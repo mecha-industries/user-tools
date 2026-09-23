@@ -31,7 +31,7 @@ concurrency:
 jobs:
   trivy-secret:
     name: Trivy secret scan
-    runs-on: [self-hosted, catfood]
+    runs-on: [self-hosted, catfood, catfood-docker]
     steps:
       - uses: actions/checkout@v4
 

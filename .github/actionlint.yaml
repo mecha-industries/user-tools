@@ -3,3 +3,4 @@ self-hosted-runner:
     - self-hosted
     - catfood
     - catfood-minimal
+    - catfood-docker
