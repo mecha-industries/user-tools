@@ -1,0 +1,14 @@
+schemaVersion: 0.1.0
+map:
+  exclude:
+    - "**/*.test.ts"
+    - "**/*.test.tsx"
+    - "**/*.spec.ts"
+    - "**/*.spec.tsx"
+    - "**/*.test.sh"
+    - "**/tests/**"
+    - "**/__tests__/**"
+    - "**/test_*.py"
+    - "**/*_test.py"
+    - "**/*_test.rs"
+    - "**/*_tests.rs"
