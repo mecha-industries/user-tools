@@ -1,5 +1,7 @@
 # Mecha10 User Tools
 
+[![CI](https://github.com/mecha-industries/user-tools/actions/workflows/ci.yml/badge.svg?branch=main)](https://github.com/mecha-industries/user-tools/actions/workflows/ci.yml) ![License](https://img.shields.io/badge/license-Unknown-blue) ![Last commit](https://img.shields.io/github/last-commit/mecha-industries/user-tools) ![Top language](https://img.shields.io/github/languages/top/mecha-industries/user-tools)
+
 Public distribution repository for Mecha10 CLI and Launcher binaries.
 
 ## CLI Installation
