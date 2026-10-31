@@ -44,3 +44,22 @@ jobs:
           severity: HIGH,CRITICAL
           exit-code: '1'
           format: table
+
+  ci-failure-ticket:
+    name: ci-failure-ticket
+    needs: [trivy-secret]
+    if: always() && contains(needs.*.result, 'failure')
+    runs-on: [self-hosted, catfood, catfood-minimal]
+    timeout-minutes: 10
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v7
+      - name: File CI failure ticket
+        env:
+          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
+          GITHUB_REPOSITORY: ${{ github.repository }}
+        run: |
+          bash scripts/file-ci-failure-ticket.sh \
+            "Security Scan" \
+            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
