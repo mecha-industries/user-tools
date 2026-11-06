@@ -29,11 +29,11 @@ jobs:
           for f in scripts/*.sh; do
             shebang="$(head -1 "$f")"
             case "$shebang" in
-              '#!/bin/sh')
+              '#!/bin/sh'|'#!/usr/bin/env sh')
                 echo "== sh -n $f =="
                 sh -n "$f" || status=1
                 ;;
-              '#!/bin/bash')
+              '#!/bin/bash'|'#!/usr/bin/env bash')
                 echo "== bash -n $f =="
                 bash -n "$f" || status=1
                 ;;
@@ -72,7 +72,10 @@ jobs:
           shellcheck --version
           # Each script carries its own #!/bin/sh or #!/bin/bash shebang, and
           # the tool infers dialect per-file from that -- no --shell override.
-          shellcheck scripts/*.sh
+          # -x follows `source` directives (see shellcheck source= comments)
+          # so sourced local libs are actually checked instead of just
+          # emitting an unresolved SC1091 info note.
+          shellcheck -x scripts/*.sh
 
   # Hard gate, matching every other repo's convention. Installed the same
   # way as shellcheck above: pinned static release, no remote `uses:` to

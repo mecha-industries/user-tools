@@ -10,7 +10,7 @@ set -euo pipefail
 
 script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LOG_PREFIX="[file-ci-failure-ticket]"
-# shellcheck source=lib/linear-ticket.sh
+# shellcheck source=scripts/lib/linear-ticket.sh
 source "$script_dir/lib/linear-ticket.sh"
 
 workflow_name="${1:-Main}"
