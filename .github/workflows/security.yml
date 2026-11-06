@@ -49,7 +49,7 @@ jobs:
     name: ci-failure-ticket
     needs: [trivy-secret]
     if: always() && contains(needs.*.result, 'failure')
-    runs-on: [self-hosted, catfood, catfood-minimal]
+    runs-on: arc-catfood-minimal
     timeout-minutes: 10
     permissions:
       contents: read
