@@ -32,6 +32,9 @@ jobs:
   trivy-secret:
     name: Trivy secret scan
     runs-on: arc-catfood-docker
+    container:
+      image: ubuntu:22.04
+      options: --cpus=1 --memory=1Gi
     steps:
       - uses: actions/checkout@v4
 
