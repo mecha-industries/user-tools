@@ -6,80 +6,9 @@ BINARY_NAME="mecha10"
 INSTALL_DIR="${MECHA10_INSTALL_DIR:-$HOME/.local/bin}"
 API_BASE="${MECHA10_API_URL:-https://mecha.industries/api}"
 
-if [ -t 1 ]; then
-    RED='\033[0;31m'
-    GREEN='\033[0;32m'
-    YELLOW='\033[1;33m'
-    BLUE='\033[0;34m'
-    NC='\033[0m'
-else
-    RED=''
-    GREEN=''
-    YELLOW=''
-    BLUE=''
-    NC=''
-fi
-
-info() {
-    printf "${BLUE}==>${NC} %s\n" "$1"
-}
-
-success() {
-    printf "${GREEN}==>${NC} %s\n" "$1"
-}
-
-warn() {
-    printf "${YELLOW}Warning:${NC} %s\n" "$1"
-}
-
-error() {
-    printf "${RED}Error:${NC} %s\n" "$1" >&2
-    exit 1
-}
-
-detect_os() {
-    case "$(uname -s)" in
-        Darwin)
-            echo "darwin"
-            ;;
-        Linux)
-            echo "linux"
-            ;;
-        MINGW*|MSYS*|CYGWIN*)
-            echo "windows"
-            ;;
-        *)
-            error "Unsupported operating system: $(uname -s)"
-            ;;
-    esac
-}
-
-detect_arch() {
-    case "$(uname -m)" in
-        x86_64|amd64)
-            echo "x86_64"
-            ;;
-        arm64|aarch64)
-            echo "aarch64"
-            ;;
-        *)
-            error "Unsupported architecture: $(uname -m)"
-            ;;
-    esac
-}
-
-download() {
-    url="$1"
-    output="$2"
-
-    if command -v curl >/dev/null 2>&1; then
-        curl -fsSL "$url" -o "$output"
-    elif command -v wget >/dev/null 2>&1; then
-        wget -q "$url" -O "$output"
-    else
-        error "Neither curl nor wget found. Please install one of them."
-    fi
-}
+script_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
+# shellcheck source=scripts/lib/install-common.sh
+. "$script_dir/lib/install-common.sh"
 
 main() {
     info "Detecting system..."
