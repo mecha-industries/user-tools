@@ -43,6 +43,11 @@ main() {
         error "Installation failed"
     fi
 
+    info "Verifying installed version..."
+    if ! verify_version "$INSTALL_DIR/${BINARY_NAME}" "$MECHA10_VERSION" "--version"; then
+        error "Installed mecha10 binary did not respond to --version as expected. The download or install may be corrupt — please retry."
+    fi
+
     case ":$PATH:" in
         *":$INSTALL_DIR:"*)
             ;;
