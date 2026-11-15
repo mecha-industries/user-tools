@@ -101,6 +101,19 @@ main() {
 
     success "Installed binary to ${INSTALL_DIR}/${BINARY_NAME}"
 
+    info "Verifying installed version..."
+    if ! verify_version "$INSTALL_DIR/${BINARY_NAME}" "$MECHA10_VERSION" "--version"; then
+        # mecha10-launcher does not currently implement --version (no
+        # #[command(version)] on its CLI), so we can't do a strict
+        # version-match check here. Fall back to confirming the binary is
+        # at least a valid, runnable executable rather than silently
+        # trusting that mv+chmod succeeded.
+        warn "mecha10-launcher does not support --version; skipping strict version verification."
+        if ! "$INSTALL_DIR/${BINARY_NAME}" --help >/dev/null 2>&1; then
+            error "Installed mecha10-launcher binary failed to run (--help failed). The download or install may be corrupt — please retry."
+        fi
+    fi
+
     if [ "${MECHA10_NO_SERVICE:-0}" != "1" ]; then
         setup_systemd_service
     fi

@@ -81,3 +81,53 @@ download() {
         error "Neither curl nor wget found. Please install one of them."
     fi
 }
+
+# verify_version — confirm the just-installed binary actually reports the
+# version that was requested, instead of trusting a successful
+# download+mv+chmod as proof the install is correct.
+#
+# Args:
+#   $1 binary_path     - path to the installed executable
+#   $2 expected_version - the version that was requested (e.g. $MECHA10_VERSION);
+#                          pass "" if the caller requested "latest"/unset
+#   $3 version_flag    - flag to query the binary's own version (default: --version)
+#
+# Behavior:
+#   - Runs `<binary_path> <version_flag>` and extracts a semver-like token
+#     from its output.
+#   - If expected_version is non-empty, the extracted version must match it
+#     (a leading "v" is ignored on either side) or this fails loudly.
+#   - If expected_version is empty, just requires a non-empty, recognizable
+#     version string to be reported.
+#   - Returns 2 (without printing an error) if the binary doesn't support
+#     version_flag at all, so callers whose binary is known not to implement
+#     it can fall back to a weaker executability check instead of treating
+#     this as a hard failure.
+#   - Any other failure (binary ran but reported no recognizable version, or
+#     reported a version that doesn't match) calls error(), which exits.
+verify_version() {
+    binary_path="$1"
+    expected_version="$2"
+    version_flag="${3:---version}"
+
+    if ! version_output=$("$binary_path" "$version_flag" 2>&1); then
+        return 2
+    fi
+
+    actual_version=$(printf '%s' "$version_output" | grep -oE '[0-9]+\.[0-9]+\.[0-9]+[A-Za-z0-9.+-]*' | head -n1)
+
+    if [ -z "$actual_version" ]; then
+        error "Installed binary '$binary_path' ran '$version_flag' but reported no recognizable version string (output: '$version_output'). The download may be corrupt or incomplete."
+    fi
+
+    if [ -n "$expected_version" ]; then
+        requested_version="${expected_version#v}"
+        reported_version="${actual_version#v}"
+        if [ "$requested_version" != "$reported_version" ]; then
+            error "Version mismatch after install: requested '$expected_version' but installed binary '$binary_path' reports '$actual_version'. The download may be stale or corrupt — please retry."
+        fi
+    fi
+
+    success "Verified installed binary reports version: $actual_version"
+    return 0
+}
