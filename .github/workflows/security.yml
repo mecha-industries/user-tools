@@ -38,18 +38,11 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install curl (needed by trivy-action's own installer)
-        run: apt-get update -qq && apt-get install -y -qq --no-install-recommends curl
-
       - name: Run Trivy (secrets)
-        uses: aquasecurity/trivy-action@v0.36.0
+        uses: mecha-industries/mecha10-actions/.github/actions/trivy-scan@main
         with:
-          scan-type: fs
-          scan-ref: .
           scanners: secret
           severity: HIGH,CRITICAL
-          exit-code: '1'
-          format: table
 
   ci-failure-ticket:
     name: ci-failure-ticket
