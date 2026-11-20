@@ -1,16 +1,8 @@
 name: Security Scan
 run-name: Dependency & secret scan
 
-# Inlined rather than referenced via `uses:` - this previously called
-# `mecha-industries/mecha10-actions/.github/workflows/security-scan.yml@main`,
-# a reusable workflow in a repo that does not exist (confirmed 404). That
-# broke this entire workflow at startup (a bad reusable-workflow reference
-# fails the whole run, not just this one job) - same failure mode as
-# mecha10-deploy's validate.yml actionlint job, fixed the same way there.
-#
-# No dependency manifests exist in this repo (it's shell scripts only), so
-# there is nothing for a Trivy vulnerability scan to check - only the
-# secret scan applies here.
+# No dependency manifests exist in this repo (it's shell scripts only), so there is nothing for a
+# Trivy vulnerability scan to check - only the secret scan applies here (enable-vuln: false).
 
 on:
   pull_request:
@@ -21,44 +13,25 @@ on:
   schedule:
     - cron: '0 6 * * 1'
 
+# The nested `changes` job in security-scan.yml requests `pull-requests: read` (required by
+# dorny/paths-filter on pull_request events) - a reusable workflow's job can never be granted
+# more permission than the CALLER itself grants, so this caller must declare
+# `pull-requests: read` here too, not just `contents: read`. Skipping this causes a
+# `startup_failure` whose cause only shows up in the GitHub web UI's validation error - it
+# never surfaces via the REST/GraphQL APIs, so it's easy to misdiagnose as something else.
 permissions:
   contents: read
+  pull-requests: read
 
 concurrency:
   group: security-${{ github.ref }}
   cancel-in-progress: true
 
 jobs:
-  trivy-secret:
-    name: Trivy secret scan
-    runs-on: arc-catfood-docker
-    container:
-      image: ubuntu:22.04
-      options: --cpus=1 --memory=1Gi
-    steps:
-      - uses: actions/checkout@v4
-
-      - name: Run Trivy (secrets)
-        uses: mecha-industries/mecha10-actions/.github/actions/trivy-scan@main
-        with:
-          scanners: secret
-          severity: HIGH,CRITICAL
-
-  ci-failure-ticket:
-    name: ci-failure-ticket
-    needs: [trivy-secret]
-    if: always() && contains(needs.*.result, 'failure')
-    runs-on: arc-catfood-minimal
-    timeout-minutes: 10
-    permissions:
-      contents: read
-    steps:
-      - uses: actions/checkout@v7
-      - name: File CI failure ticket
-        env:
-          LINEAR_API_KEY: ${{ secrets.LINEAR_API_KEY }}
-          GITHUB_REPOSITORY: ${{ github.repository }}
-        run: |
-          bash scripts/file-ci-failure-ticket.sh \
-            "Security Scan" \
-            "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+  security-scan:
+    uses: mecha-industries/mecha10-actions/.github/workflows/security-scan.yml@main
+    secrets: inherit
+    with:
+      enable-vuln: false
+      enable-required-checks: false
+      ci-failure-ticket-script-path: scripts/file-ci-failure-ticket.sh
