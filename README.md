@@ -14,9 +14,9 @@ Public distribution repository for Mecha10 CLI and Launcher binaries.
 | `scripts/tools/robot/servo_test.py` | Sweeps a servo through min/mid/max pulse widths over hardware PWM | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
 | `scripts/tools/robot/wifi-update.sh` | Updates a robot's wifi, live over SSH or via a first-boot bootfs job | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
 
-`scripts/file-ci-failure-ticket.sh` and everything under `scripts/lib/` are internal plumbing
-(CI failure-ticket helper and shared library code sourced by the scripts above) — not meant to
-be run directly by an end user, and not covered below.
+Everything under `scripts/ci/` (CI failure-ticket helper and its shared library code) and
+`scripts/lib/` (shared library code sourced by the scripts above) is internal plumbing — not
+meant to be run directly by an end user, and not covered below.
 
 ## CLI Installation
 

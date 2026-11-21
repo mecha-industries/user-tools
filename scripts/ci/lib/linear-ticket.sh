@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# scripts/lib/linear-ticket.sh — Linear GraphQL helpers shared by any script here that
+# scripts/ci/lib/linear-ticket.sh — Linear GraphQL helpers shared by any script here that
 # files/comments on tickets against the LAB team via Linear's GraphQL API.
 # Requires: LINEAR_API_KEY, LOG_PREFIX env vars set by the caller.
 set -euo pipefail
