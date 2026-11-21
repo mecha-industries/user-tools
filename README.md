@@ -136,16 +136,20 @@ launcher binary distribution pipeline covered above.
   # Mode A: update wifi on a live robot reachable over ethernet (SSH)
   ./scripts/tools/robot/wifi-update.sh --mode ssh --host 192.168.1.50 --ssid MyNetwork --password secret123
 
-  # Mode B: write a wifi profile onto an offline/unmounted-boot SD card or USB disk
-  ./scripts/tools/robot/wifi-update.sh --mode offline --mount /mnt/sdcard --ssid MyNetwork --password secret123
+  # Mode B: arm a first-boot wifi setup job on the mounted bootfs (boot/firmware, FAT32)
+  # partition of an SD card/USB disk
+  ./scripts/tools/robot/wifi-update.sh --mode offline --mount /mnt/bootfs --ssid MyNetwork --password secret123
   ```
 
   Mode A runs over ethernet so the robot stays reachable even if the new wifi credentials are
-  wrong. Mode B writes a NetworkManager connection profile directly onto a mounted (not
-  currently booted) Raspberry Pi OS Bookworm+ boot disk, so the device joins the network
-  automatically on its next boot. Both support `MECHA10_WIFI_*`-prefixed env vars (and an
-  optional `--env-file`/`MECHA10_WIFI_ENV_FILE`) as an alternative to CLI flags — see
-  `--help` for details.
+  wrong, and applies immediately. Mode B arms a one-time "run on next boot" hook (the same
+  mechanism Raspberry Pi Imager itself uses) on the mounted bootfs — the FAT32 boot/firmware
+  partition that macOS, Windows, and Linux can all mount directly, unlike the ext4 rootfs — so
+  the device writes its own NetworkManager connection profile and joins the network the next
+  time it boots. It does NOT apply immediately, and works the same whether the card is a
+  pristine unflashed image or one that's already been running in a robot for a long time. Both
+  support `MECHA10_WIFI_*`-prefixed env vars (and an optional `--env-file`/
+  `MECHA10_WIFI_ENV_FILE`) as an alternative to CLI flags — see `--help` for details.
 
 ## Maintainers
 
