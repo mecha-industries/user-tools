@@ -25,4 +25,3 @@ jobs:
     with:
       enable-vuln: false
       enable-required-checks: false
-      ci-failure-ticket-script-path: scripts/ci/file-ci-failure-ticket.sh
