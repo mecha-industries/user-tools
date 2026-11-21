@@ -77,32 +77,21 @@ jobs:
           # emitting an unresolved SC1091 info note.
           shellcheck -x scripts/*.sh
 
-  # Hard gate, matching every other repo's convention. Installed the same
-  # way as shellcheck above: pinned static release, no remote `uses:` to
-  # labone-actions (that reusable workflow is a private user-owned repo
-  # that org-to-org workflow_call can't reach — see mecha10 PR #103/#104).
+  # Hard gate, matching every other repo's convention.
   actionlint:
     name: actionlint
     runs-on: arc-user-tools
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install actionlint
-        env:
-          ACTIONLINT_VERSION: 1.7.12
-        run: |
-          set -e
-          curl -sSL "https://github.com/rhysd/actionlint/releases/download/v${ACTIONLINT_VERSION}/actionlint_${ACTIONLINT_VERSION}_linux_amd64.tar.gz" -o /tmp/actionlint.tar.gz
-          mkdir -p "$RUNNER_TEMP/bin"
-          tar -xzf /tmp/actionlint.tar.gz -C "$RUNNER_TEMP/bin" actionlint
-          chmod +x "$RUNNER_TEMP/bin/actionlint"
-          echo "$RUNNER_TEMP/bin" >> "$GITHUB_PATH"
+      - id: scan
+        uses: mecha-industries/mecha10-actions/.github/actions/actionlint@main
+        with:
+          actionlint-version: "1.7.12"
 
-      - name: Run actionlint
-        run: |
-          set -e
-          actionlint -version
-          actionlint -color
+      - name: Fail on actionlint findings
+        if: steps.scan.outputs.outcome == 'failure'
+        run: exit 1
 
   # Lets branch protection require this single check instead of listing
   # every job above by name (brittle - a renamed/added/removed job silently
