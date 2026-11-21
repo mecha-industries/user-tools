@@ -13,6 +13,7 @@ Public distribution repository for Mecha10 CLI and Launcher binaries.
 | `scripts/tools/robot/gpio-test.sh` | Cycles GPIO motor-control pins for wiring/driver-board debugging | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
 | `scripts/tools/robot/servo_test.py` | Sweeps a servo through min/mid/max pulse widths over hardware PWM | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
 | `scripts/tools/robot/wifi-update.sh` | Updates a robot's wifi, live over SSH or via a first-boot bootfs job | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
+| `scripts/tools/robot/first-boot.sh` | Full first-time provisioning of a fresh Raspberry Pi OS install for a robot | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
 
 `scripts/file-ci-failure-ticket.sh` and everything under `scripts/lib/` are internal plumbing
 (CI failure-ticket helper and shared library code sourced by the scripts above) — not meant to
@@ -194,6 +195,28 @@ launcher binary distribution pipeline covered above.
   pristine unflashed image or one that's already been running in a robot for a long time. Both
   support `MECHA10_WIFI_*`-prefixed env vars (and an optional `--env-file`/
   `MECHA10_WIFI_ENV_FILE`) as an alternative to CLI flags — see `--help` for details.
+
+- `first-boot.sh` — full first-time provisioning of a fresh Raspberry Pi OS Lite (Bookworm or
+  later) install: system update, hostname, disable bluetooth, reduce disk writes for SD/USB
+  card longevity, install camera/GPIO dev tools, enable I2C/SPI, configure wifi (+ optional
+  static IP) via `nmcli`, Pi 5 EEPROM boot-order/USB-boot config, minor performance tuning, a
+  health-check summary, and `mecha10-launcher` install.
+
+  ```bash
+  # Typical flow: SSH in over ethernet before wifi is configured (Pi's default mDNS hostname)
+  scp scripts/tools/robot/first-boot.sh .env pi@raspberrypi.local:~/
+  ssh pi@raspberrypi.local
+  sudo bash ~/first-boot.sh my-robot-01 --env ~/.env
+  sudo reboot
+  ```
+
+  Requires `MECHA10_WIFI_SSID` and `MECHA10_WIFI_PASSWORD` (errors out clearly if missing).
+  Optional: `MECHA10_ROBOT_STATIC_IP` (+ `MECHA10_ROBOT_GATEWAY`, `MECHA10_ROBOT_DNS`) for a
+  static wifi IP instead of DHCP, and `MECHA10_ROBOT_BOOT_ORDER`,
+  `MECHA10_ROBOT_USB_MSD_STARTUP_DELAY`, `MECHA10_ROBOT_USB_MSD_DISCOVER_TIMEOUT` for Pi 5 EEPROM
+  tuning. Takes `--env <file>` (or `ENV_FILE`) to source these from a `.env`-style file instead
+  of exporting them by hand. Run as root on the Pi itself — standalone, no other files in this
+  repo required.
 
 ## Maintainers
 
