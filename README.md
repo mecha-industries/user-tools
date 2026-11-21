@@ -19,6 +19,19 @@ Everything under `scripts/ci/` (CI failure-ticket helper and its shared library 
 `scripts/lib/` (shared library code sourced by the scripts above) is internal plumbing — not
 meant to be run directly by an end user, and not covered below.
 
+## Connecting to a Robot
+
+Copy `.env.template` to `.env` and fill in your robot's host/user/password (and the wifi
+SSID/password if you're using `wifi-update.sh`):
+
+```bash
+cp .env.template .env
+# edit .env with your robot's details
+```
+
+Then pass it via `--env-file .env` to any script that supports it (`install-launcher.sh
+--mode ssh`, `wifi-update.sh --mode ssh`) instead of repeating flags on the command line.
+
 ## CLI Installation
 
 Install the Mecha10 CLI on your development machine:
@@ -68,6 +81,19 @@ MECHA10_NO_SERVICE=1 curl -fsSL ... | sh
 
 # Use a different API endpoint
 MECHA10_API_URL=https://mecha.industries/api curl -fsSL ... | sh
+```
+
+### Remote (SSH) Install
+
+Install over SSH using password auth, instead of running the curl one-liner directly on the
+robot. Requires `sshpass` on the machine running the script (`brew install sshpass` on macOS,
+`apt install sshpass` on Linux):
+
+```bash
+./scripts/install-launcher.sh --mode ssh --host 192.168.1.50 --ssh-password secret123
+
+# Or using .env (see "Connecting to a Robot" above)
+./scripts/install-launcher.sh --mode ssh --env-file .env
 ```
 
 ### Launcher Setup
@@ -178,23 +204,31 @@ launcher binary distribution pipeline covered above.
 - `wifi-update.sh` — updates a robot's wifi connection, in one of two modes:
 
   ```bash
-  # Mode A: update wifi on a live robot reachable over ethernet (SSH)
-  ./scripts/tools/robot/wifi-update.sh --mode ssh --host 192.168.1.50 --ssid MyNetwork --password secret123
+  # Mode A: update wifi on a live robot reachable over ethernet (SSH, password auth)
+  ./scripts/tools/robot/wifi-update.sh --mode ssh --host 192.168.1.50 --ssh-password secret123 \
+      --ssid MyNetwork --password secret123
+
+  # Or using .env (see "Connecting to a Robot" above)
+  ./scripts/tools/robot/wifi-update.sh --mode ssh --env-file .env --ssid MyNetwork --password secret123
 
   # Mode B: arm a first-boot wifi setup job on the mounted bootfs (boot/firmware, FAT32)
   # partition of an SD card/USB disk
   ./scripts/tools/robot/wifi-update.sh --mode offline --mount /mnt/bootfs --ssid MyNetwork --password secret123
   ```
 
-  Mode A runs over ethernet so the robot stays reachable even if the new wifi credentials are
-  wrong, and applies immediately. Mode B arms a one-time "run on next boot" hook (the same
-  mechanism Raspberry Pi Imager itself uses) on the mounted bootfs — the FAT32 boot/firmware
-  partition that macOS, Windows, and Linux can all mount directly, unlike the ext4 rootfs — so
-  the device writes its own NetworkManager connection profile and joins the network the next
-  time it boots. It does NOT apply immediately, and works the same whether the card is a
-  pristine unflashed image or one that's already been running in a robot for a long time. Both
-  support `MECHA10_WIFI_*`-prefixed env vars (and an optional `--env-file`/
-  `MECHA10_WIFI_ENV_FILE`) as an alternative to CLI flags — see `--help` for details.
+  Mode A connects over SSH using password auth (via `sshpass` — install it first, e.g.
+  `brew install sshpass` on macOS, `apt install sshpass` on Linux) over ethernet, so the robot
+  stays reachable even if the new wifi credentials are wrong, and applies immediately. Note
+  `--ssh-password` (the robot's SSH login password, `MECHA10_ROBOT_PASSWORD`) is distinct from
+  `--password` (the wifi network password being set, `MECHA10_WIFI_PASSWORD`). Mode B arms a
+  one-time "run on next boot" hook (the same mechanism Raspberry Pi Imager itself uses) on the
+  mounted bootfs — the FAT32 boot/firmware partition that macOS, Windows, and Linux can all
+  mount directly, unlike the ext4 rootfs — so the device writes its own NetworkManager
+  connection profile and joins the network the next time it boots. It does NOT apply
+  immediately, and works the same whether the card is a pristine unflashed image or one that's
+  already been running in a robot for a long time. Both modes support `MECHA10_ROBOT_*`/
+  `MECHA10_WIFI_*`-prefixed env vars (and an optional `--env-file`/`MECHA10_WIFI_ENV_FILE`) as
+  an alternative to CLI flags — see `--help` for details.
 
 - `first-boot.sh` — full first-time provisioning of a fresh Raspberry Pi OS Lite (Bookworm or
   later) install: system update, hostname, disable bluetooth, reduce disk writes for SD/USB
