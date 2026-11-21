@@ -11,6 +11,7 @@ Public distribution repository for Mecha10 CLI and Launcher binaries.
 | `scripts/install.sh` | Installs the Mecha10 CLI (served via the curl one-liner) | [CLI Installation](#cli-installation) |
 | `scripts/install-launcher.sh` | Installs the Mecha10 Launcher on a robot | [Launcher Installation](#launcher-installation-linux) |
 | `scripts/tools/robot/gpio-test.sh` | Cycles GPIO motor-control pins for wiring/driver-board debugging | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
+| `scripts/tools/robot/i2c-test.sh` | Scans an I2C bus and reports detected devices, with hints for known mecha10 sensors | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
 | `scripts/tools/robot/servo_test.py` | Sweeps a servo through min/mid/max pulse widths over hardware PWM | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
 | `scripts/tools/robot/wifi-update.sh` | Updates a robot's wifi, live over SSH or via a first-boot bootfs job | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
 | `scripts/tools/robot/first-boot.sh` | Full first-time provisioning of a fresh Raspberry Pi OS install for a robot | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
@@ -182,6 +183,26 @@ launcher binary distribution pipeline covered above.
   against the opposite baseline, named combos for boards it already knows about (Viam Rover 2,
   active-low; L298N, active-high), and a few adjacent-pin pairs — printing each test label to
   the console before/after it runs, 2 seconds per step.
+
+- `i2c-test.sh` — scans an I2C bus and reports what's detected, with hints for a few
+  addresses mecha10 robots actually use.
+
+  ```bash
+  # Default: scans bus 1 (/dev/i2c-1)
+  ./scripts/tools/robot/i2c-test.sh
+
+  # Scan a different bus
+  ./scripts/tools/robot/i2c-test.sh --bus 0
+  ```
+
+  Needs `i2c-tools` installed (already installed by `first-boot.sh`) — errors out clearly
+  with an install instruction (`sudo apt install i2c-tools`) if missing. Runs `i2cdetect -y
+  <bus>` and prints its raw table output, then a short human-readable summary below it:
+  `0x68`/`0x69` as a likely MPU6050 IMU (see `imu-test.py`), `0x76`/`0x77` as a likely
+  BMP280/BME280 pressure/temperature sensor, `0x3C`/`0x3D` as a likely SSD1306 OLED display,
+  and any other detected address listed plainly with no guessed hint. These hints are purely
+  informative, not authoritative. If nothing is detected, it suggests checking wiring/pull-up
+  resistors and confirming I2C is actually enabled (`sudo raspi-config nonint get_i2c`).
 
 - `servo_test.py` — sweeps a servo through min/mid/max pulse widths over the kernel's
   hardware PWM sysfs interface.
