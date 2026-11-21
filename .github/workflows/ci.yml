@@ -26,7 +26,7 @@ jobs:
         run: |
           set -e
           status=0
-          for f in scripts/*.sh; do
+          for f in scripts/*.sh scripts/ci/*.sh; do
             shebang="$(head -1 "$f")"
             case "$shebang" in
               '#!/bin/sh'|'#!/usr/bin/env sh')
@@ -75,7 +75,7 @@ jobs:
           # -x follows `source` directives (see shellcheck source= comments)
           # so sourced local libs are actually checked instead of just
           # emitting an unresolved SC1091 info note.
-          shellcheck -x scripts/*.sh
+          shellcheck -x scripts/*.sh scripts/ci/*.sh
 
   # Hard gate, matching every other repo's convention. Installed the same
   # way as shellcheck above: pinned static release, no remote `uses:` to
