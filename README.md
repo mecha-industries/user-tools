@@ -4,6 +4,20 @@
 
 Public distribution repository for Mecha10 CLI and Launcher binaries.
 
+## Scripts at a Glance
+
+| Script | What it does | Details |
+|--------|---------------|---------|
+| `scripts/install.sh` | Installs the Mecha10 CLI (served via the curl one-liner) | [CLI Installation](#cli-installation) |
+| `scripts/install-launcher.sh` | Installs the Mecha10 Launcher on a robot | [Launcher Installation](#launcher-installation-linux) |
+| `scripts/tools/robot/gpio-test.sh` | Cycles GPIO motor-control pins for wiring/driver-board debugging | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
+| `scripts/tools/robot/servo_test.py` | Sweeps a servo through min/mid/max pulse widths over hardware PWM | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
+| `scripts/tools/robot/wifi-update.sh` | Updates a robot's wifi, live over SSH or via a first-boot bootfs job | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
+
+`scripts/file-ci-failure-ticket.sh` and everything under `scripts/lib/` are internal plumbing
+(CI failure-ticket helper and shared library code sourced by the scripts above) — not meant to
+be run directly by an end user, and not covered below.
+
 ## CLI Installation
 
 Install the Mecha10 CLI on your development machine:
@@ -128,8 +142,38 @@ launcher binary distribution pipeline covered above.
 
 - `gpio-test.sh` — exercises GPIO pins used for motor control (individually and in common
   motor-driver combos), for debugging wiring and driver boards.
+
+  ```bash
+  # Run as-is — it takes no arguments
+  ./scripts/tools/robot/gpio-test.sh
+  ```
+
+  Needs real GPIO hardware access (`gpiodetect`/`gpioget`/`gpioset` against the robot's GPIO
+  chip) — run as a user with access to `/dev/gpiochip*`, typically via `sudo` or `gpio`-group
+  membership. It auto-detects the right chip (`gpiochip0` on a Pi 4, `gpiochip4` on a Pi 5),
+  then cycles through: all pins HIGH, all pins LOW, each pin individually toggled HIGH/LOW
+  against the opposite baseline, named combos for boards it already knows about (Viam Rover 2,
+  active-low; L298N, active-high), and a few adjacent-pin pairs — printing each test label to
+  the console before/after it runs, 2 seconds per step.
+
 - `servo_test.py` — sweeps a servo through min/mid/max pulse widths over the kernel's
   hardware PWM sysfs interface.
+
+  ```bash
+  # Default: channels 0:0 and 0:1 (GPIO12/13 under the pwm-2chan overlay), mid -> max -> min -> mid
+  ./scripts/tools/robot/servo_test.py
+
+  # Override channels and narrow the pulse range
+  ./scripts/tools/robot/servo_test.py --channels 0:0 --min-us 900 --max-us 2100 --duration 3
+  ```
+
+  Flags: `--channels CHIP:CHANNEL [...]` (default `0:0 0:1`), `--min-us` (default `600`),
+  `--max-us` (default `2400`), `--duration` in seconds (default `2.0`), `--tick` step interval
+  (default `0.02`), `--settle` pause at each endpoint (default `0.3`). Requires the PWM
+  channel's device-tree overlay to already be enabled (e.g. `dtoverlay=pwm-2chan` in
+  `/boot/firmware/config.txt` on a Pi) and each `pwm<M>` channel to be unexported before
+  running.
+
 - `wifi-update.sh` — updates a robot's wifi connection, in one of two modes:
 
   ```bash
