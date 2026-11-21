@@ -16,17 +16,27 @@
 #           immediately, only on next boot.
 #
 # Usage:
-#   wifi-update.sh --mode ssh --host <host> --ssid <ssid> --password <password> [--iface <iface>]
+#   wifi-update.sh --mode ssh --host <host> --user <user> --ssh-password <password> \
+#       --ssid <ssid> --password <password> [--iface <iface>]
 #   wifi-update.sh --mode offline --mount <path> --ssid <ssid> --password <password>
 #
+# ssh mode connects to the robot over SSH using password auth (via sshpass) —
+# NOT the wifi network password below, see MECHA10_ROBOT_PASSWORD vs
+# MECHA10_WIFI_PASSWORD.
+#
 # Env vars (each overridable by the matching --flag):
-#   MECHA10_WIFI_MODE       ssh | offline
-#   MECHA10_WIFI_HOST       robot host/IP, reachable over ethernet (ssh mode)
-#   MECHA10_WIFI_IFACE      wifi interface name on the robot (ssh mode, default: wlan0)
-#   MECHA10_WIFI_MOUNT      mount path of the boot SD card/USB disk (offline mode)
-#   MECHA10_WIFI_SSID       wifi network name
-#   MECHA10_WIFI_PASSWORD   wifi password
-#   MECHA10_WIFI_ENV_FILE   optional .env-style file to source for the above
+#   MECHA10_WIFI_MODE        ssh | offline
+#   MECHA10_ROBOT_HOST       robot host/IP, reachable over ethernet (ssh mode)
+#   MECHA10_ROBOT_USER       SSH login username (ssh mode, default: pi)
+#   MECHA10_ROBOT_PASSWORD   SSH login password, used via sshpass (ssh mode) —
+#                            this is the ROBOT's login password, distinct from
+#                            the wifi network password below
+#   MECHA10_WIFI_IFACE       wifi interface name on the robot (ssh mode, default: wlan0)
+#   MECHA10_WIFI_MOUNT       mount path of the boot SD card/USB disk (offline mode)
+#   MECHA10_WIFI_SSID        wifi network name
+#   MECHA10_WIFI_PASSWORD    wifi NETWORK password being set on the device —
+#                            distinct from MECHA10_ROBOT_PASSWORD above
+#   MECHA10_WIFI_ENV_FILE    optional .env-style file to source for the above
 
 set -e
 
@@ -37,22 +47,31 @@ script_dir="$(CDPATH='' cd -- "$(dirname -- "$0")" && pwd)"
 usage() {
     cat <<EOF
 Usage:
-  wifi-update.sh --mode ssh --host <host> --ssid <ssid> --password <password> [--iface <iface>]
+  wifi-update.sh --mode ssh --host <host> --user <user> --ssh-password <password> \\
+      --ssid <ssid> --password <password> [--iface <iface>]
   wifi-update.sh --mode offline --mount <path> --ssid <ssid> --password <password>
 
 Options:
-  --mode <ssh|offline>   Update mode (or MECHA10_WIFI_MODE)
-  --host <host>          Robot host/IP, reachable over ethernet (ssh mode, or MECHA10_WIFI_HOST)
-  --iface <iface>        Wifi interface on the robot (ssh mode, default: wlan0, or MECHA10_WIFI_IFACE)
-  --mount <path>         Mount path of the bootfs (boot/firmware, FAT32) partition of the SD
-                         card/USB disk (offline mode, or MECHA10_WIFI_MOUNT)
-  --ssid <ssid>          Wifi network name (or MECHA10_WIFI_SSID)
-  --password <password>  Wifi password (or MECHA10_WIFI_PASSWORD)
-  --env-file <path>      .env-style file to source first (or MECHA10_WIFI_ENV_FILE)
-  -h, --help             Show this help
+  --mode <ssh|offline>     Update mode (or MECHA10_WIFI_MODE)
+  --host <host>            Robot host/IP, reachable over ethernet (ssh mode, or MECHA10_ROBOT_HOST)
+  --user <user>            SSH login username (ssh mode, default: pi, or MECHA10_ROBOT_USER)
+  --ssh-password <password>
+                           SSH login password, used via sshpass (ssh mode, required, or
+                           MECHA10_ROBOT_PASSWORD). This is the ROBOT's login password — NOT
+                           the wifi network password below.
+  --iface <iface>          Wifi interface on the robot (ssh mode, default: wlan0, or MECHA10_WIFI_IFACE)
+  --mount <path>           Mount path of the bootfs (boot/firmware, FAT32) partition of the SD
+                           card/USB disk (offline mode, or MECHA10_WIFI_MOUNT)
+  --ssid <ssid>            Wifi network name (or MECHA10_WIFI_SSID)
+  --password <password>    Wifi NETWORK password being set on the device (or
+                           MECHA10_WIFI_PASSWORD). This is NOT the SSH login password above.
+  --env-file <path>        .env-style file to source first (or MECHA10_WIFI_ENV_FILE)
+  -h, --help               Show this help
 
 ssh mode runs over ethernet, so the robot stays reachable even if the new
-wifi credentials turn out to be wrong. It applies immediately.
+wifi credentials turn out to be wrong. It applies immediately. It connects
+via SSH password auth (sshpass) using --user/--ssh-password, which is
+completely separate from --ssid/--password (the wifi network being set up).
 
 offline mode expects <path> to be the already-mounted bootfs (boot/firmware,
 FAT32) partition of a Raspberry Pi OS Bookworm+ SD card/USB boot disk — the
@@ -69,7 +88,9 @@ EOF
 }
 
 MODE="${MECHA10_WIFI_MODE:-}"
-HOST="${MECHA10_WIFI_HOST:-}"
+ROBOT_HOST="${MECHA10_ROBOT_HOST:-}"
+ROBOT_USER="${MECHA10_ROBOT_USER:-pi}"
+ROBOT_PASSWORD="${MECHA10_ROBOT_PASSWORD:-}"
 IFACE="${MECHA10_WIFI_IFACE:-wlan0}"
 MOUNT_PATH="${MECHA10_WIFI_MOUNT:-}"
 SSID="${MECHA10_WIFI_SSID:-}"
@@ -83,7 +104,15 @@ while [ $# -gt 0 ]; do
             shift 2
             ;;
         --host)
-            HOST="$2"
+            ROBOT_HOST="$2"
+            shift 2
+            ;;
+        --user)
+            ROBOT_USER="$2"
+            shift 2
+            ;;
+        --ssh-password)
+            ROBOT_PASSWORD="$2"
             shift 2
             ;;
         --iface)
@@ -121,7 +150,9 @@ if [ -n "$ENV_FILE" ]; then
     # shellcheck disable=SC1090
     . "$ENV_FILE"
     MODE="${MODE:-$MECHA10_WIFI_MODE}"
-    HOST="${HOST:-$MECHA10_WIFI_HOST}"
+    ROBOT_HOST="${ROBOT_HOST:-$MECHA10_ROBOT_HOST}"
+    ROBOT_USER="${ROBOT_USER:-${MECHA10_ROBOT_USER:-pi}}"
+    ROBOT_PASSWORD="${ROBOT_PASSWORD:-$MECHA10_ROBOT_PASSWORD}"
     IFACE="${IFACE:-${MECHA10_WIFI_IFACE:-wlan0}}"
     MOUNT_PATH="${MOUNT_PATH:-$MECHA10_WIFI_MOUNT}"
     SSID="${SSID:-$MECHA10_WIFI_SSID}"
@@ -133,11 +164,15 @@ fi
 [ -n "$PASSWORD" ] || { usage; error "--password is required"; }
 
 update_via_ssh() {
-    [ -n "$HOST" ] || { usage; error "--host is required for --mode ssh"; }
+    [ -n "$ROBOT_HOST" ] || { usage; error "--host is required for --mode ssh"; }
+    [ -n "$ROBOT_PASSWORD" ] || { usage; error "--ssh-password is required for --mode ssh"; }
+    command -v sshpass >/dev/null || error "sshpass is required for --mode ssh — install it (e.g. 'brew install sshpass' on macOS, 'apt install sshpass' on Linux) and retry"
 
-    info "Updating wifi connection '$SSID' on $HOST over ethernet (iface: $IFACE)..."
+    TARGET="$ROBOT_USER@$ROBOT_HOST"
 
-    ssh -o BatchMode=yes "$HOST" "bash -s" <<REMOTE
+    info "Updating wifi connection '$SSID' on $TARGET over ethernet (iface: $IFACE)..."
+
+    sshpass -p "$ROBOT_PASSWORD" ssh -o StrictHostKeyChecking=accept-new "$TARGET" "bash -s" <<REMOTE
 set -e
 if nmcli -t -f NAME connection show | grep -Fxq "$SSID"; then
     nmcli connection delete "$SSID"
@@ -147,7 +182,7 @@ nmcli connection add type wifi con-name "$SSID" ifname "$IFACE" ssid "$SSID" \\
 nmcli connection up "$SSID"
 REMOTE
 
-    success "Wifi connection '$SSID' updated and brought up on $HOST"
+    success "Wifi connection '$SSID' updated and brought up on $TARGET"
 }
 
 update_offline() {

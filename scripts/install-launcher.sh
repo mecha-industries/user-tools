@@ -1,4 +1,22 @@
 #!/bin/sh
+#
+# Usage:
+#   install-launcher.sh [--mode local]
+#   install-launcher.sh --mode ssh --host <host> [--user <user>] --ssh-password <password> \
+#       [--env-file <path>]
+#
+# local mode (default) runs the install directly on this machine — the
+# existing curl-on-device behavior, unchanged.
+#
+# ssh mode connects to the robot over SSH using password auth (via sshpass)
+# and runs the same public install one-liner remotely, forwarding through
+# any of MECHA10_VERSION/MECHA10_NO_SERVICE/MECHA10_API_URL set locally.
+#
+# Env vars (each overridable by the matching --flag, ssh mode only):
+#   MECHA10_ROBOT_HOST        robot host/IP, reachable over ethernet
+#   MECHA10_ROBOT_USER        SSH login username (default: pi)
+#   MECHA10_ROBOT_PASSWORD    SSH login password, used via sshpass
+#   MECHA10_ROBOT_ENV_FILE    optional .env-style file to source for the above
 
 set -e
 
@@ -17,6 +35,106 @@ if [ -t 1 ]; then
 else
     BOLD=''
 fi
+
+usage() {
+    cat <<EOF
+Usage:
+  install-launcher.sh [--mode local]
+  install-launcher.sh --mode ssh --host <host> [--user <user>] --ssh-password <password> \\
+      [--env-file <path>]
+
+Options:
+  --mode <local|ssh>       Install mode (default: local)
+  --host <host>            Robot host/IP, reachable over ethernet (ssh mode, or MECHA10_ROBOT_HOST)
+  --user <user>            SSH login username (ssh mode, default: pi, or MECHA10_ROBOT_USER)
+  --ssh-password <password>
+                           SSH login password, used via sshpass (ssh mode, required, or
+                           MECHA10_ROBOT_PASSWORD)
+  --env-file <path>        .env-style file to source first (or MECHA10_ROBOT_ENV_FILE)
+  -h, --help               Show this help
+
+local mode (default) installs directly on this machine — identical to running
+the public curl one-liner, and unaffected by any of the options above.
+
+ssh mode connects to the robot over SSH using password auth (sshpass) and
+runs the same install remotely, forwarding through any of MECHA10_VERSION/
+MECHA10_NO_SERVICE/MECHA10_API_URL that are set in your local environment.
+EOF
+}
+
+MODE="local"
+ROBOT_HOST="${MECHA10_ROBOT_HOST:-}"
+ROBOT_USER="${MECHA10_ROBOT_USER:-pi}"
+ROBOT_PASSWORD="${MECHA10_ROBOT_PASSWORD:-}"
+ENV_FILE="${MECHA10_ROBOT_ENV_FILE:-}"
+
+while [ $# -gt 0 ]; do
+    case "$1" in
+        --mode)
+            MODE="$2"
+            shift 2
+            ;;
+        --host)
+            ROBOT_HOST="$2"
+            shift 2
+            ;;
+        --user)
+            ROBOT_USER="$2"
+            shift 2
+            ;;
+        --ssh-password)
+            ROBOT_PASSWORD="$2"
+            shift 2
+            ;;
+        --env-file)
+            ENV_FILE="$2"
+            shift 2
+            ;;
+        -h|--help)
+            usage
+            exit 0
+            ;;
+        *)
+            error "Unknown argument: $1"
+            ;;
+    esac
+done
+
+if [ -n "$ENV_FILE" ]; then
+    [ -f "$ENV_FILE" ] || error "--env-file '$ENV_FILE' not found"
+    # shellcheck disable=SC1090
+    . "$ENV_FILE"
+    ROBOT_HOST="${ROBOT_HOST:-$MECHA10_ROBOT_HOST}"
+    ROBOT_USER="${ROBOT_USER:-${MECHA10_ROBOT_USER:-pi}}"
+    ROBOT_PASSWORD="${ROBOT_PASSWORD:-$MECHA10_ROBOT_PASSWORD}"
+fi
+
+install_via_ssh() {
+    [ -n "$ROBOT_HOST" ] || { usage; error "--host is required for --mode ssh"; }
+    [ -n "$ROBOT_PASSWORD" ] || { usage; error "--ssh-password is required for --mode ssh"; }
+    command -v sshpass >/dev/null || error "sshpass is required for --mode ssh — install it (e.g. 'brew install sshpass' on macOS, 'apt install sshpass' on Linux) and retry"
+
+    TARGET="$ROBOT_USER@$ROBOT_HOST"
+
+    REMOTE_ENV=""
+    [ -n "${MECHA10_VERSION:-}" ] && REMOTE_ENV="$REMOTE_ENV MECHA10_VERSION='$MECHA10_VERSION'"
+    [ -n "${MECHA10_NO_SERVICE:-}" ] && REMOTE_ENV="$REMOTE_ENV MECHA10_NO_SERVICE='$MECHA10_NO_SERVICE'"
+    [ -n "${MECHA10_API_URL:-}" ] && REMOTE_ENV="$REMOTE_ENV MECHA10_API_URL='$MECHA10_API_URL'"
+
+    info "Installing mecha10-launcher on $TARGET over SSH..."
+
+    sshpass -p "$ROBOT_PASSWORD" ssh -o StrictHostKeyChecking=accept-new "$TARGET" \
+        "${REMOTE_ENV# } sh -c 'curl -fsSL https://mecha.industries/api/install-launcher.sh | sh'"
+
+    success "mecha10-launcher installed on $TARGET"
+}
+
+if [ "$MODE" = "ssh" ]; then
+    install_via_ssh
+    exit 0
+fi
+
+[ "$MODE" = "local" ] || { usage; error "Unknown --mode '$MODE' (expected local or ssh)"; }
 
 setup_systemd_service() {
     SERVICE_DIR="$HOME/.config/systemd/user"
