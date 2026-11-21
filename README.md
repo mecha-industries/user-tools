@@ -12,6 +12,7 @@ Public distribution repository for Mecha10 CLI and Launcher binaries.
 | `scripts/install-launcher.sh` | Installs the Mecha10 Launcher on a robot | [Launcher Installation](#launcher-installation-linux) |
 | `scripts/tools/robot/gpio-test.sh` | Cycles GPIO motor-control pins for wiring/driver-board debugging | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
 | `scripts/tools/robot/servo_test.py` | Sweeps a servo through min/mid/max pulse widths over hardware PWM | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
+| `scripts/tools/robot/imu-test.py` | Reads live accelerometer/gyro/temperature data from an MPU6050 IMU over I2C | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
 | `scripts/tools/robot/wifi-update.sh` | Updates a robot's wifi, live over SSH or via a first-boot bootfs job | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
 | `scripts/tools/robot/first-boot.sh` | Full first-time provisioning of a fresh Raspberry Pi OS install for a robot | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
 
@@ -200,6 +201,24 @@ launcher binary distribution pipeline covered above.
   channel's device-tree overlay to already be enabled (e.g. `dtoverlay=pwm-2chan` in
   `/boot/firmware/config.txt` on a Pi) and each `pwm<M>` channel to be unexported before
   running.
+
+- `imu-test.py` — reads live accelerometer/gyro/temperature data from an MPU6050 IMU over I2C.
+
+  ```bash
+  # Default: bus 1 (/dev/i2c-1), address 0x68, 10 samples/sec for 5 seconds
+  ./scripts/tools/robot/imu-test.py
+
+  # Run until Ctrl+C instead of a fixed duration
+  ./scripts/tools/robot/imu-test.py --duration 0
+  ```
+
+  Flags: `--bus` (default `1`, meaning `/dev/i2c-1`), `--address` (default `0x68`, accepts hex
+  or decimal), `--rate` samples per second to print (default `10`), `--duration` in seconds,
+  `0` meaning run until Ctrl+C (default `5`). Mirrors mecha10-nodes' real `imu` crate hardware
+  defaults (bus `/dev/i2c-1`, address `0x68`, +/-250 deg/s gyro scale, +/-2g accel scale).
+  Requires the `smbus2` package (`pip install smbus2` or the `python3-smbus2`/`python3-smbus`
+  apt package). If the device isn't detected, run `i2c-test.sh` first to confirm detection and
+  the correct bus/address.
 
 - `wifi-update.sh` — updates a robot's wifi connection, in one of two modes:
 
