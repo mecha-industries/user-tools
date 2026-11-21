@@ -120,6 +120,33 @@ docker pull ghcr.io/mecha-industries/mecha10-remote:latest
 mecha10 remote up
 ```
 
+## Robot Setup & Diagnostic Tools
+
+`scripts/tools/robot/` holds manual hardware setup/diagnostic tools for mecha10 robots. These
+are run directly on, or against, the robot's Raspberry Pi — they're unrelated to the CLI/
+launcher binary distribution pipeline covered above.
+
+- `gpio-test.sh` — exercises GPIO pins used for motor control (individually and in common
+  motor-driver combos), for debugging wiring and driver boards.
+- `servo_test.py` — sweeps a servo through min/mid/max pulse widths over the kernel's
+  hardware PWM sysfs interface.
+- `wifi-update.sh` — updates a robot's wifi connection, in one of two modes:
+
+  ```bash
+  # Mode A: update wifi on a live robot reachable over ethernet (SSH)
+  ./scripts/tools/robot/wifi-update.sh --mode ssh --host 192.168.1.50 --ssid MyNetwork --password secret123
+
+  # Mode B: write a wifi profile onto an offline/unmounted-boot SD card or USB disk
+  ./scripts/tools/robot/wifi-update.sh --mode offline --mount /mnt/sdcard --ssid MyNetwork --password secret123
+  ```
+
+  Mode A runs over ethernet so the robot stays reachable even if the new wifi credentials are
+  wrong. Mode B writes a NetworkManager connection profile directly onto a mounted (not
+  currently booted) Raspberry Pi OS Bookworm+ boot disk, so the device joins the network
+  automatically on its next boot. Both support `MECHA10_WIFI_*`-prefixed env vars (and an
+  optional `--env-file`/`MECHA10_WIFI_ENV_FILE`) as an alternative to CLI flags — see
+  `--help` for details.
+
 ## Maintainers
 
 Build and publish scripts are in the [mecha10 monorepo](https://github.com/mecha-industries/mecha10).
