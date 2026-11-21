@@ -13,6 +13,7 @@ Public distribution repository for Mecha10 CLI and Launcher binaries.
 | `scripts/tools/robot/gpio-test.sh` | Cycles GPIO motor-control pins for wiring/driver-board debugging | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
 | `scripts/tools/robot/servo_test.py` | Sweeps a servo through min/mid/max pulse widths over hardware PWM | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
 | `scripts/tools/robot/wifi-update.sh` | Updates a robot's wifi, live over SSH or via a first-boot bootfs job | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
+| `scripts/tools/robot/camera-test.sh` | Captures a test image from the Pi's CSI camera or a USB webcam | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
 | `scripts/tools/robot/first-boot.sh` | Full first-time provisioning of a fresh Raspberry Pi OS install for a robot | [Robot Setup & Diagnostic Tools](#robot-setup--diagnostic-tools) |
 
 Everything under `scripts/ci/` (CI failure-ticket helper and its shared library code) and
@@ -229,6 +230,21 @@ launcher binary distribution pipeline covered above.
   already been running in a robot for a long time. Both modes support `MECHA10_ROBOT_*`/
   `MECHA10_WIFI_*`-prefixed env vars (and an optional `--env-file`/`MECHA10_WIFI_ENV_FILE`) as
   an alternative to CLI flags — see `--help` for details.
+
+- `camera-test.sh` — captures a single test image from either the Pi's CSI camera module or a
+  USB webcam, to confirm the camera hardware/driver stack is working.
+
+  ```bash
+  ./scripts/tools/robot/camera-test.sh --mode csi
+
+  ./scripts/tools/robot/camera-test.sh --mode usb --device /dev/video0
+  ```
+
+  Defaults to `--mode auto` (prefer CSI if detected, else the first USB camera found), and
+  saves captures to `--out <dir>` (default `$HOME/captures`, created if missing) as
+  `capture_<timestamp>.jpg`. `--list` lists detected USB video devices without capturing.
+  Requires `rpicam-apps` (`rpicam-still`/`rpicam-hello`) for CSI mode, and `ffmpeg` plus,
+  optionally, `v4l2-ctl` (from `v4l-utils`, used for USB device discovery) for USB mode.
 
 - `first-boot.sh` — full first-time provisioning of a fresh Raspberry Pi OS Lite (Bookworm or
   later) install: system update, hostname, disable bluetooth, reduce disk writes for SD/USB
