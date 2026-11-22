@@ -106,3 +106,14 @@ jobs:
       - name: Fail if any required job failed or was cancelled
         if: ${{ contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled') }}
         run: exit 1
+
+  security-scan:
+    name: Security scan
+    permissions:
+      contents: read
+      pull-requests: read
+    uses: mecha-industries/mecha10-actions/.github/workflows/security-scan.yml@main
+    secrets: inherit
+    with:
+      enable-vuln: false
+      enable-required-checks: false
