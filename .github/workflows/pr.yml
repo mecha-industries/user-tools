@@ -117,3 +117,20 @@ jobs:
     with:
       enable-vuln: false
       enable-required-checks: false
+
+  ci-failure-ticket:
+    name: File Linear ticket on main-branch CI failure
+    needs: [required-checks, security-scan]
+    if: >-
+      always() &&
+      github.event_name == 'push' &&
+      github.ref == 'refs/heads/main' &&
+      contains(needs.*.result, 'failure')
+    runs-on: arc-user-tools
+    timeout-minutes: 10
+    steps:
+      - name: File or update CI failure ticket
+        uses: mecha-industries/mecha10-actions/.github/actions/ci-failure-ticket@main
+        with:
+          workflow-name: "PR"
+          linear-api-key: ${{ secrets.LINEAR_API_KEY }}
